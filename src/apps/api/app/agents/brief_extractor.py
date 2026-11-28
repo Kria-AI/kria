@@ -191,6 +191,22 @@ class BriefExtractorAgent(Agent[BriefExtractionInput, BriefExtractionOutput]):
             conversation=json.dumps(input.conversation, ensure_ascii=False),
             # Parent KRI-1151: the planner says whether the item can pause the take for a clip.
             brief_section=_narrow_brief_section(input.insert_clips_open),
+            preview_scope_choice=(
+                "`preview` for text suggestions or wording options the creator wants to see "
+                "before applying,\n"
+                if input.require_request_scope
+                else ""
+            ),
+            preview_scope_instruction=(
+                "Use `preview` when the creator asks to see\n"
+                "text suggestions first rather than change the draft. Return no brief updates "
+                "or delegation for\n"
+                "a preview: suggested words are not approved creator requirements. "
+                "If the creator explicitly\n"
+                "chooses words to apply or asks to add the text now, use `edit` instead. "
+                if input.require_request_scope
+                else ""
+            ),
         )
         if input.changes_request:
             # KRI-1360: the message answers "Change my request"; unset, the prompt is unchanged.
@@ -223,7 +239,7 @@ class BriefExtractorAgent(Agent[BriefExtractionInput, BriefExtractionOutput]):
             scope = data.get("request_scope")
             clarification = data.get("clarification")
             if input.require_request_scope:
-                if scope not in {"edit", "rebuild", "clarify"}:
+                if scope not in {"edit", "rebuild", "preview", "clarify"}:
                     raise ValueError("response needs a valid request_scope")
                 if scope == "clarify" and not isinstance(clarification, str):
                     raise ValueError("clarify scope needs clarification")
@@ -232,7 +248,7 @@ class BriefExtractorAgent(Agent[BriefExtractionInput, BriefExtractionOutput]):
                 if scope != "clarify" and clarification is not None:
                     raise ValueError("only clarify scope may include clarification")
             elif scope is not None or clarification is not None:
-                if scope not in {"edit", "rebuild", "clarify"}:
+                if scope not in {"edit", "rebuild", "preview", "clarify"}:
                     raise ValueError("request_scope is invalid")
                 if scope == "clarify" and (
                     not isinstance(clarification, str) or not clarification.strip()
@@ -246,6 +262,10 @@ class BriefExtractorAgent(Agent[BriefExtractionInput, BriefExtractionOutput]):
                     if field in update.facts and not isinstance(update.facts[field], bool):
                         raise ValueError(f"{field} must be a boolean")
             starts_fresh = data.get("starts_fresh") is True
+            if scope == "preview" and (
+                updates or starts_fresh or data.get("delegates_all_choices") is True
+            ):
+                raise ValueError("preview scope cannot change the brief")
             # Keep old direct callers compatible: only planner-supplied context
             # enables ledger validation.  The planner always supplies the field,
             # including an empty brief, so non-additive updates fail closed.

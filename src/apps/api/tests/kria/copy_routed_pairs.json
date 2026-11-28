@@ -3105,6 +3105,16 @@
    "app/agents/edit_copilot.py",
    "That photo duration is outside the supported range. I left the edit unchanged.",
    "Bu fotoğraf süresi desteklenen aralığın dışında. Düzenlemeyi değiştirmedim."
+  ],
+  [
+   "app/kria/planner.py",
+   "The suggestions are too long for one reply. Nothing was changed. Which clips should I suggest text for first?",
+   "Öneriler tek bir yanıt için fazla uzun. Hiçbir şey değişmedi. Önce hangi klipler için yazı önereyim?"
+  ],
+  [
+   "app/routes/_copilot.py",
+   "I couldn't prepare text options this time. Your edit is unchanged. Try again.",
+   "Bu kez yazı seçenekleri hazırlayamadım. Düzenlemen değişmedi. Tekrar dene."
   ]
  ],
  "retired": [
