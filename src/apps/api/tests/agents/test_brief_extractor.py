@@ -67,6 +67,25 @@ def test_required_scope_rejects_missing_invalid_and_ambiguous_scope_payloads() -
             agent.parse(json.dumps(payload), required)
 
 
+def test_preview_scope_is_taught_only_for_rendered_followups(monkeypatch) -> None:
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "speaker_full_opening_enabled", False)
+    agent = BriefExtractorAgent(None)
+    base = _input()
+    unscoped = agent.render_prompt(base)
+    scoped = agent.render_prompt(base.model_copy(update={"require_request_scope": True}))
+    assert "`preview` for text suggestions" not in unscoped
+    assert "suggested words are not approved creator requirements" not in unscoped
+    assert "`preview` for text suggestions" in scoped
+    assert "suggested words are not approved creator requirements" in scoped
+    assert "chooses words to apply or asks to add the text now, use `edit` instead" in scoped
+    for prompt in (unscoped, scoped):
+        assert "`edit` for a\nrevision to the rendered video" in prompt
+        assert "`rebuild` for a request to remake the whole video" in prompt
+        assert "`clarify` when the latest instruction cannot distinguish those scopes" in prompt
+
+
 def test_preview_scope_cannot_record_unapproved_words_or_delegation() -> None:
     agent = BriefExtractorAgent(None)  # type: ignore[arg-type]
     required = _input().model_copy(update={"require_request_scope": True})

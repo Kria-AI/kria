@@ -191,6 +191,22 @@ class BriefExtractorAgent(Agent[BriefExtractionInput, BriefExtractionOutput]):
             conversation=json.dumps(input.conversation, ensure_ascii=False),
             # Parent KRI-1151: the planner says whether the item can pause the take for a clip.
             brief_section=_narrow_brief_section(input.insert_clips_open),
+            preview_scope_choice=(
+                "`preview` for text suggestions or wording options the creator wants to see "
+                "before applying,\n"
+                if input.require_request_scope
+                else ""
+            ),
+            preview_scope_instruction=(
+                "Use `preview` when the creator asks to see\n"
+                "text suggestions first rather than change the draft. Return no brief updates "
+                "or delegation for\n"
+                "a preview: suggested words are not approved creator requirements. "
+                "If the creator explicitly\n"
+                "chooses words to apply or asks to add the text now, use `edit` instead. "
+                if input.require_request_scope
+                else ""
+            ),
         )
         if input.changes_request:
             # KRI-1360: the message answers "Change my request"; unset, the prompt is unchanged.
